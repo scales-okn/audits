@@ -27,7 +27,13 @@ skip_write = False
 def get_question_results(question_num, verbose=True, serialize_dfs=False):
     question_num = int(question_num)
     query_num = qc_constants.question_queries[question_num]
+    text = qc_constants.question_texts[question_num]
+    if type(text) != str: # i.e. lambda that pulls specific val from query
+        text = text(query)
+
     print(f'Retrieving results for question {question_num}...')
+    if verbose:
+        print(f'Question text: "{text}"')
 
     # pull query file from remote
     ssh = paramiko.SSHClient()
@@ -53,20 +59,17 @@ def get_question_results(question_num, verbose=True, serialize_dfs=False):
         response.raise_for_status()
         sparql_results = response.json()
 
-    # format results
+    # format answer
     answer = qc_constants.question_helpers[question_num](sparql_results['results']['bindings'])
     if type(answer) == pd.DataFrame and serialize_dfs:
         answer = answer.to_dict('records')
-    text = qc_constants.question_texts[question_num]
-    if type(text) != str: # i.e. lambda that pulls specific val from query
-        text = text(query)
-
-    # return results
     if verbose:
         if type(answer) in (pd.DataFrame, list):
             print(f'Answer is DataFrame with {len(answer)} rows')
         else:
             print(f'Answer: {answer}')
+
+    # return results
     results = {
         'question_text': text,
         'question_answer': answer,
