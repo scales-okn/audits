@@ -1,13 +1,3 @@
-'''
-These QC results were generated from a small test dataset filtered down
-from the full dataset according to the following criteria:
-
-- apd: arrests whose NC.ActivityDate is between Jan–Mar 2015 inclusive
-- clayton: cases for which the year part of the case id is "82"
-- fulton: charges whose NC.StartDate is in Jan 2021
-- pacer: cases in Alaska district court (akd)
-'''
-
 import sys
 import json
 
@@ -24,13 +14,14 @@ skip_write = False
 
 
 
-def get_question_results(question_num, verbose=True, serialize_dfs=False):
-    question_num = int(question_num)
+def get_question_results(question_num, is_first_of_run=True, verbose=True, serialize_dfs=False):
     query_num = qc_constants.question_queries[question_num]
     text = qc_constants.question_texts[question_num]
     if type(text) != str: # i.e. lambda that pulls specific val from query
         text = text(query)
 
+    if verbose and is_first_of_run:
+        print(qc_constants.filters_description, '\n')
     print(f'Retrieving results for question {question_num}...')
     if verbose:
         print(f'Question text: "{text}"')
@@ -83,8 +74,9 @@ def get_question_results(question_num, verbose=True, serialize_dfs=False):
 
 def get_question_results_multiple(question_nums, verbose=True, serialize_dfs=False):
     results = {}
-    for num in question_nums:
-        results[num] = get_question_results(num, verbose=verbose, serialize_dfs=serialize_dfs)
+    for i,num in enumerate(question_nums):
+        results[num] = get_question_results(num, is_first_of_run=(i==0),
+            verbose=verbose, serialize_dfs=serialize_dfs)
     return results
 
 def get_question_results_all(verbose=True, serialize_dfs=False):
@@ -98,7 +90,7 @@ if __name__ == "__main__":
     if len(sys.argv)==1:
         results = get_question_results_all(serialize_dfs=True)
     else:
-        results = get_question_results_multiple(sys.argv[1:])
+        results = get_question_results_multiple([int(x) for x in sys.argv[1:]])
 
     if not skip_write:
         with open(outpath, 'w') as f:

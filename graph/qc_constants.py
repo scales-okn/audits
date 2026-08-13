@@ -2,6 +2,18 @@ fuseki_hostname = "137.184.139.216"
 fuseki_username = "root"
 fuseki_port = 3030
 
+filters_description = '''
+**********************************************************************************
+***    These QC results were generated from a small test dataset, which was    ***
+***  filtered down from the full dataset according to the following criteria:  ***
+**********************************************************************************
+
+- apd: arrests whose NC.ActivityDate is between Jan–Mar 2015 inclusive
+- clayton: cases for which the year part of the case id is "82"
+- fulton: charges whose NC.StartDate is in Jan 2021
+- pacer: cases in Alaska district court (akd)
+'''
+
 
 
 question_texts = {
