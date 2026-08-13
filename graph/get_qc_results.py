@@ -1,5 +1,6 @@
 '''
-These QC results were generated from a small test dataset filtered down from the full dataset according to the following criteria:
+These QC results were generated from a small test dataset filtered down
+from the full dataset according to the following criteria:
 
 - apd: arrests whose NC.ActivityDate is between Jan–Mar 2015 inclusive
 - clayton: cases for which the year part of the case id is "82"
@@ -19,7 +20,7 @@ import qc_constants
 from qc_constants import fuseki_hostname, fuseki_username, fuseki_port
 
 outpath = 'results.json'
-skip_write = True
+skip_write = False
 
 
 
