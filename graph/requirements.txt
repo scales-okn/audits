@@ -1,0 +1,4 @@
+pandas
+paramiko<4.0
+requests
+sshtunnel

@@ -1,3 +1,10 @@
+from datetime import datetime
+from collections import Counter
+
+import pandas as pd
+
+
+
 fuseki_hostname = "137.184.139.216"
 fuseki_username = "root"
 fuseki_port = 3030
@@ -9,7 +16,7 @@ filters_description = '''
 **********************************************************************************
 
 - apd: arrests whose NC.ActivityDate is between Jan–Mar 2015 inclusive
-- clayton: cases for which the year part of the case id is "82"
+- clayton: cases for which the case id contains "23-c"
 - fulton: charges whose NC.StartDate is in Jan 2021
 - pacer: cases in Alaska district court (akd)
 '''
@@ -22,15 +29,15 @@ question_texts = {
 	2: "For Clayton civil eviction cases that involve someone who also appeared as a Clayton criminal defendant, what is the average number of days between the end of the eviction case and the start of the criminal case?",
 	3: "For Clayton civil eviction cases that involve someone who was also sentenced in a Clayton criminal case, what is the average number of days between the end of the sentence and the start of the eviction case?",
 	4: "What is the average number of days between booking dates and first hearings in Fulton?",
-	5: "What is the average number of days between Fulton hearings, by case?",
-	6: "What is the average number of days between Fulton hearings, by charge?",
-	7: "What is the average number of days between Fulton hearings, by NIBRS drug code?",
+	5: "What is the average number of days between Clayton/Fulton/PACER hearings, by case?",
+	6: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS offense category?",
+	7: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS drug code?",
 	8: lambda query: query, # TODO
-	9: "What is the count of APD/Clayton charges, by NIBRS drug code?",
-	10: "What is the count of APD/Clayton charges, by race code?",
-	11: "What is the length in days of Clayton cases, by NIBRS offense code?",
+	9: "What is the total count of APD/Clayton charges, by NIBRS drug code?",
+	10: "What is the total count of APD/Clayton charges, by race code?",
+	11: "What is the length in days of Clayton cases, by NIBRS offense category?",
 	12: "What is the length in days of Clayton cases, by NIBRS drug code?",
-	13: "What is the length in docket entries of Clayton cases, by NIBRS offense code?",
+	13: "What is the length in docket entries of Clayton cases, by NIBRS offense category?",
 	14: "What is the length in docket entries of Clayton cases, by NIBRS drug code?",
 	15: lambda query: query, # TODO
 	16: "How many PACER cases have an application to proceed in forma pauperis?",
@@ -38,8 +45,8 @@ question_texts = {
 	18: "How many PACER cases have a granted application to proceed in forma pauperis?",
 	19: "What percentage of PACER applications to proceed in forma pauperis are granted, by judge?",
 	20: "What percentage of PACER applications to proceed in forma pauperis are granted, by court?",
-	21: lambda query: query, # TODO
-	22: lambda query: query, # TODO
+	21: "What percentage of PACER cases with nature-of-suit 710 (Fair Labor Standards Act) settle?", # depends on pacer_2_nos in run_graph_qc
+	22: "On average, how many days elapse in a FLSA case before settlement starts?", # depends on pacer_2_nos in run_graph_qc
 	23: lambda query: query, # TODO
 	24: lambda query: query, # TODO
 	25: lambda query: query, # TODO
@@ -74,13 +81,51 @@ question_queries = {
 
 
 
-def helper_2(results):
+_to_datetime = lambda x: datetime.strptime(str(x), '%Y-%m-%d')
+
+def helper_query3(results, key):
+	dates_all = {}
 	for row in results:
-		pass # TODO
+		category = row.get(key, {}).get('value')
+		if not category:
+			continue
+		if '/' in category:
+			category = category.split('/')[-1]
+		if category not in dates_all:
+			dates_all[category] = set()
+		dates_all[category].add(f'{row['date']['value']} | {row['text']['value']}')
+	diffs_all = {}
+	for category, dates in dates_all.items():
+		dates = sorted([_to_datetime(x.split(' | ')[0]) for x in dates])
+		if len(dates)>1:
+			if category not in diffs_all:
+				diffs_all[category] = []
+			for i in range(len(dates)-1):
+				diffs_all[category].append((dates[i+1]-dates[i]).days)
+	return pd.DataFrame([(category, sum(diffs)/len(diffs)) for category, diffs in diffs_all.items()], columns=[key, 'avg_days_diff'])
+
+def helper_question29(results):
+	years = {}
+	for row in results:
+		year = row['date']['value'].split('-')[0]
+		if year not in years:
+			years[year] = {'granted': 0, 'all': 0}
+		years[year]['granted' if 'granting' in row['label']['value'] else 'all'] += 1
+	for year in years:
+		years[year] = years[year]['granted']*100/years[year]['all']
+	return years
 
 question_helpers = {
 	0: lambda results: len(set([row['civil_case']['value'] for row in results])),
 	1: lambda results: len(set([row['civil_case'] for row in results if row['civil_type'] == 'Patho'])),
-	2: helper_2
-	# TODO finish the rest
+	4: lambda results: sum([(_to_datetime(row['firstHearingDate']['value'])-_to_datetime(row['bookingDate']['value'])).days for row in results])/len(results),
+	5: lambda results: helper_query3(results, 'case'),
+	6: lambda results: helper_query3(results, 'nibrs'),
+	7: lambda results: helper_query3(results, 'drug'),
+	9: lambda results: Counter([row['drugCode']['value'] for row in results]).most_common(),
+	10: lambda results: Counter([row['race']['value'] if 'race' in row else None for row in results]).most_common(),
+	16: lambda results: len(set([x['case']['value'] for x in results])),
+	17: lambda results: Counter([row['start_date']['value'].split('-')[0] for row in results]).most_common(),
+	28: lambda results: len([row for row in results if 'granting' in row['label']['value']])*100/len([row for row in results if 'granting' not in row['label']['value']]),
+	29: helper_question29
 }

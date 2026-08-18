@@ -1,10 +1,10 @@
 import sys
 import json
 
+import paramiko
 import requests
 import pandas as pd
 from sshtunnel import SSHTunnelForwarder
-import paramiko # for compatibility with sshtunnel, use <4.0 when installing
 
 import qc_constants
 from qc_constants import fuseki_hostname, fuseki_username, fuseki_port
@@ -24,6 +24,8 @@ def get_question_results(question_num, is_first_of_run=True, verbose=True, seria
         print(qc_constants.filters_description, '\n')
     print(f'Retrieving results for question {question_num}...')
     if verbose:
+        if 'Clayton' in text:
+            print('n.b. Clayton queries may run slowly (i.e. ~20s) on this test set')
         print(f'Question text: "{text}"')
 
     # pull query file from remote
@@ -50,15 +52,25 @@ def get_question_results(question_num, is_first_of_run=True, verbose=True, seria
         response.raise_for_status()
         sparql_results = response.json()
 
+    # # debug block
+    # results = sparql_results['results']['bindings']
+    # print(f'\n{len(results)} results')
+    # x = 10 if len(results) > 10 else len(results)
+    # for row in results[:x]:
+    #     print(row)
+    # print()
+
     # format answer
+    if question_num not in qc_constants.question_helpers:
+        raise Exception(f'Question {question_num} has not yet been implemented')
     answer = qc_constants.question_helpers[question_num](sparql_results['results']['bindings'])
+    if verbose:
+        if type(answer) in (int, float):
+            print(f'Answer: {answer}')
+        else:
+            print(f'Answer is {type(answer)} with length {len(answer)}')
     if type(answer) == pd.DataFrame and serialize_dfs:
         answer = answer.to_dict('records')
-    if verbose:
-        if type(answer) in (pd.DataFrame, list):
-            print(f'Answer is DataFrame with {len(answer)} rows')
-        else:
-            print(f'Answer: {answer}')
 
     # return results
     results = {
@@ -81,7 +93,7 @@ def get_question_results_multiple(question_nums, verbose=True, serialize_dfs=Fal
 
 def get_question_results_all(verbose=True, serialize_dfs=False):
     return get_question_results_multiple(
-        qc_constants.question_texts.keys(), verbose=verbose, serialize_dfs=serialize_dfs)
+        qc_constants.question_helpers.keys(), verbose=verbose, serialize_dfs=serialize_dfs)
 
 
 
@@ -90,10 +102,10 @@ if __name__ == "__main__":
     if len(sys.argv)==1:
         results = get_question_results_all(serialize_dfs=True)
     else:
-        results = get_question_results_multiple([int(x) for x in sys.argv[1:]])
+        results = get_question_results_multiple([int(x) for x in sys.argv[1:]], serialize_dfs=True)
 
     if not skip_write:
         with open(outpath, 'w') as f:
             json.dump(results, f)
         print(f'Wrote results to {outpath}')
-    print('Script complete\n')
+    print('Script complete\n\n')
