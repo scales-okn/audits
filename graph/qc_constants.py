@@ -33,8 +33,8 @@ question_texts = {
 	6: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS offense category?",
 	7: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS drug code?",
 	8: lambda query: query, # TODO
-	9: "What is the total count of APD/Clayton charges, by NIBRS drug code?",
-	10: "What is the total count of APD/Clayton charges, by race code?",
+	9: "What is the total count of APD/Clayton drug charges, by NIBRS drug code?",
+	10: "What is the total count of APD drug charges, by race code?",
 	11: "What is the length in days of Clayton cases, by NIBRS offense category?",
 	12: "What is the length in days of Clayton cases, by NIBRS drug code?",
 	13: "What is the length in docket entries of Clayton cases, by NIBRS offense category?",
