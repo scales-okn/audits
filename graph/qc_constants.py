@@ -32,24 +32,24 @@ question_texts = {
 	5: "What is the average number of days between Clayton/Fulton/PACER hearings, by case?",
 	6: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS offense category?",
 	7: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS drug code?",
-	8: lambda query: query, # TODO
+	8: "What was the Fulton County Jail population on 1 Feb 2021?", # depends on danny_4_date in run_graph_qc
 	9: "What is the total count of APD/Clayton drug charges, by NIBRS drug code?",
 	10: "What is the total count of APD drug charges, by race code?",
 	11: "What is the length in days of Clayton cases, by NIBRS offense category?",
 	12: "What is the length in days of Clayton cases, by NIBRS drug code?",
 	13: "What is the length in docket entries of Clayton cases, by NIBRS offense category?",
 	14: "What is the length in docket entries of Clayton cases, by NIBRS drug code?",
-	15: lambda query: query, # TODO
+	15: None, # TODO (not needed for the data explorer right now)
 	16: "How many PACER cases have an application to proceed in forma pauperis?",
 	17: "How many PACER cases per year have an application to proceed in forma pauperis?",
 	18: "How many PACER cases have a granted application to proceed in forma pauperis?",
 	19: "What percentage of PACER applications to proceed in forma pauperis are granted, by judge?",
 	20: "What percentage of PACER applications to proceed in forma pauperis are granted, by court?",
-	21: "What percentage of PACER cases with nature-of-suit 710 (Fair Labor Standards Act) settle?", # depends on pacer_2_nos in run_graph_qc
-	22: "On average, how many days elapse in a FLSA case before settlement starts?", # depends on pacer_2_nos in run_graph_qc
-	23: lambda query: query, # TODO
-	24: lambda query: query, # TODO
-	25: lambda query: query, # TODO
+	21: "What percentage of PACER Fair Labor Standards Act (FLSA) cases settle?", # depends on pacer_2_nos in run_graph_qc, which i changed from nos code 830 because that code didn't produce results for the test set
+	22: "What is the average number of days that elapse in a PACER FLSA case before settlement starts?", # depends on pacer_2_nos in run_graph_qc
+	23: "What is the average number of days that elapse in a PACER FLSA case before settlement starts, by court?", # depends on pacer_2_nos in run_graph_qc
+	24: "What percentage of PACER FLSA cases contain a non-corporate party?", # depends on pacer_2_nos in run_graph_qc
+	25: "On average, do PACER FLSA cases with a non-corporate party settle more quickly or more slowly than FLSA cases with only corporate parties?", # depends on pacer_2_nos in run_graph_qc
 	26: "What is the average number of motions to dismiss in PACER civil rights cases?",
 	27: "What is the average number of motions to dismiss in PACER civil rights cases, by year?",
 	28: "What percentage of motions to dismiss in PACER civil rights cases are granted?",
