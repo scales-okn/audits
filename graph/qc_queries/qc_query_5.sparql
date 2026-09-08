@@ -1,0 +1,14 @@
+
+PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
+PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
+
+SELECT ?charge ?chargeText ?drugCode ?race
+WHERE { 
+    ?charge j:DrugCategoryCode ?drugCode ;
+            j:ChargeText ?chargeText .
+    OPTIONAL {
+        ?arrest j:ArrestCharge ?charge ;
+                j:ArrestSubject ?person .
+        ?person nc:PersonRaceText ?race .
+    }
+}

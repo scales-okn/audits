@@ -1,0 +1,13 @@
+
+PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
+PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
+PREFIX scales: <http://schemas.scales-okn.org/rdf/scales#>
+
+SELECT ?case ?court ?label
+WHERE {
+    ?case nc:CaseSubCategoryText ?nos ;
+        j:CaseCourt ?court ;
+        scales:OntologyLabel ?label .
+    FILTER regex(str(?nos), "(463|530|535|540|550|555)") .
+    FILTER regex(str(?label), "(?i)attribute/(?!motion).*dismiss") .
+}

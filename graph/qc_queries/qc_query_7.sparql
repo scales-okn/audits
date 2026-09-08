@@ -1,0 +1,25 @@
+
+PREFIX scales: <http://schemas.scales-okn.org/rdf/scales#>
+PREFIX treatment_old: <http://sail.ua.edu/ruralkg/treatmentprovider/>
+PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
+PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
+PREFIX nibrs: <http://fbi.gov/cjis/nibrs/2023.0/>
+
+SELECT ?provider (GROUP_CONCAT(DISTINCT COALESCE(STR(?neighborhood), ""); separator=", ") AS ?neighborhoods) (COUNT(DISTINCT ?arrest) AS ?numArrestsInRadius) WHERE {
+  BIND (0.5 AS ?radius)
+  BIND ("DRUG/NARCOTIC OFFENSES" as ?code)
+ 
+  ?distURI nc:MeasureDecimalValue ?dist .
+  FILTER (?dist <= ?radius)
+ 
+  ?bg2URI nc:RelativeLocationDistanceMeasure ?distURI .
+  ?bg1URI nc:RelativeLocation ?bg2URI .
+ 
+  ?bg1URI treatment_old:TreatmentProvider ?provider .
+  ?bg2URI j:Arrest ?arrest .
+ 
+  OPTIONAL {
+    ?bg1URI scales:IntersectingNeighborhood ?neighborhood .
+  }
+ 
+} GROUP BY ?provider

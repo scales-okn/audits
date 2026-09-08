@@ -1,0 +1,17 @@
+
+PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
+PREFIX nibrs: <http://fbi.gov/cjis/nibrs/2023.0/>
+PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
+
+SELECT ?case ?startDate ?endDate (COUNT(?de) as ?docketEntryCount) ?nibrsOffense ?drugCode ?charge
+WHERE {
+  ?case a scales:CriminalCase ;
+        j:CaseDefendantParty ?defendant ;
+        nc:StartDate ?startDate ;
+        nc:EndDate ?endDate ;
+        j:RegisterAction ?de .
+  
+  ?defendant j:PersonCharge ?charge .
+  ?charge nibrs:OffenseUCRCode ?nibrsOffense ;
+          j:DrugCategoryCode ?drugCode .
+} GROUP BY ?charge
