@@ -3,7 +3,7 @@ PREFIX scales: <http://schemas.scales-okn.org/rdf/scales#>
 PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
 PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
 
-SELECT DISTINCT ?case ?spid ?booking ?bookingDate ?firstHearingDate ?lastHearingDate
+SELECT DISTINCT ?case ?spid ?booking ?bookingDate ?firstHearingDate
 WHERE {
 
   ?charge j:Booking ?booking ;
@@ -15,7 +15,6 @@ WHERE {
   {
     SELECT ?case ?spid
            (MIN(?hDate) AS ?firstHearingDate)
-           (MAX(?hDate) AS ?lastHearingDate)
     WHERE {
       ?case j:RegisterAction ?regAction .
       ?party_other scales:DisambiguatedEntity ?spid ;

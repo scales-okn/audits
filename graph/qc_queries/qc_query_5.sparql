@@ -7,8 +7,7 @@ WHERE {
     ?charge j:DrugCategoryCode ?drugCode ;
             j:ChargeText ?chargeText .
     OPTIONAL {
-        ?arrest j:ArrestCharge ?charge ;
-                j:ArrestSubject ?person .
+        ?charge j:ChargeSubject ?person .
         ?person nc:PersonRaceText ?race .
     }
 }
