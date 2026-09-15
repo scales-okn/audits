@@ -18,7 +18,7 @@ filters_description = '''
 - apd: arrests whose NC.ActivityDate is between Jan–Mar 2015 inclusive
 - clayton: cases for which the case id contains "23-c"
 - fulton: charges whose NC.StartDate is in Jan 2021
-- pacer: cases in Alaska district court (akd)
+- pacer: cases in Alaska (akd) or the Northern Mariana Islands (nmid)
 '''
 
 
@@ -84,25 +84,36 @@ question_queries = {
 _to_datetime = lambda x: datetime.strptime(str(x), '%Y-%m-%d')
 
 def helper_query3(results, key):
-	dates_all = {}
+	if key not in ('case', 'nibrs', 'drug'):
+		raise Exception('unexpected key', key)
+	dates_all, nibrs_to_cid, drug_to_cid = {}, {}, {}
 	for row in results:
-		category = row.get(key, {}).get('value')
-		if not category:
+		cid, nibrs, drug = row.get('case', {}).get('value'), row.get('nibrs', {}).get('value'), row.get('drug', {}).get('value')
+		if not cid:
 			continue
-		if '/' in category:
-			category = category.split('/')[-1]
-		if category not in dates_all:
-			dates_all[category] = set()
-		dates_all[category].add(f'{row['date']['value']} | {row['text']['value']}')
+		cid = cid.split('/')[-1]
+		dates_all.setdefault(cid, set()).add(f"{row['date']['value']} | {row['text']['value']}")
+		if nibrs:
+			nibrs_to_cid.setdefault(nibrs, set()).add(cid)
+		if drug:
+			drug_to_cid.setdefault(drug, set()).add(cid)
 	diffs_all = {}
-	for category, dates in dates_all.items():
+	for cid, dates in dates_all.items():
 		dates = sorted([_to_datetime(x.split(' | ')[0]) for x in dates])
 		if len(dates)>1:
-			if category not in diffs_all:
-				diffs_all[category] = []
 			for i in range(len(dates)-1):
-				diffs_all[category].append((dates[i+1]-dates[i]).days)
-	return pd.DataFrame([(category, sum(diffs)/len(diffs)) for category, diffs in diffs_all.items()], columns=[key, 'avg_days_diff'])
+				diffs_all.setdefault(cid, []).append((dates[i+1]-dates[i]).days)
+	if key == 'case':
+		return pd.DataFrame([(case, sum(diffs)/len(diffs)) for case, diffs in diffs_all.items()], columns=[key, 'avg_days_diff'])
+	else:
+		dict_of_interest = nibrs_to_cid if key == 'nibrs' else drug_to_cid # assumes potential key values are 'case', 'nibrs', 'drug'
+		tuples = []
+		for k, cids in dict_of_interest.items():
+			diffs = []
+			for cid in cids:
+				diffs += diffs_all.get(cid) or []
+			tuples.append((k, sum(diffs)/len(diffs)))
+		return pd.DataFrame(tuples, columns=[key, 'avg_days_diff'])
 
 def helper_question29(results):
 	years = {}
