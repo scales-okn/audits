@@ -88,11 +88,11 @@ def helper_query3(results, key):
 		raise Exception('unexpected key', key)
 	dates_all, nibrs_to_cid, drug_to_cid = {}, {}, {}
 	for row in results:
-		cid, nibrs, drug = row.get('case', {}).get('value'), row.get('nibrs', {}).get('value'), row.get('drug', {}).get('value')
+		cid, nibrs, drug = row.get('case'), row.get('nibrs'), row.get('drug')
 		if not cid:
 			continue
 		cid = cid.split('/')[-1]
-		dates_all.setdefault(cid, set()).add(f"{row['date']['value']} | {row['text']['value']}")
+		dates_all.setdefault(cid, set()).add(f"{row['date']} | {row['text']}")
 		if nibrs:
 			nibrs_to_cid.setdefault(nibrs, set()).add(cid)
 		if drug:
@@ -118,25 +118,25 @@ def helper_query3(results, key):
 def helper_question29(results):
 	years = {}
 	for row in results:
-		year = row['date']['value'].split('-')[0]
+		year = row['date'].split('-')[0]
 		if year not in years:
 			years[year] = {'granted': 0, 'all': 0}
-		years[year]['granted' if 'granting' in row['label']['value'] else 'all'] += 1
+		years[year]['granted' if 'granting' in row['label'] else 'all'] += 1
 	for year in years:
 		years[year] = years[year]['granted']*100/years[year]['all']
 	return years
 
 question_helpers = {
-	0: lambda results: len(set([row['civil_case']['value'] for row in results])),
+	0: lambda results: len(set([row['civil_case'] for row in results])),
 	1: lambda results: len(set([row['civil_case'] for row in results if row['civil_type'] == 'Patho'])),
-	4: lambda results: sum([(_to_datetime(row['firstHearingDate']['value'])-_to_datetime(row['bookingDate']['value'])).days for row in results])/len(results),
+	4: lambda results: sum([(_to_datetime(row['firstHearingDate'])-_to_datetime(row['bookingDate'])).days for row in results])/len(results),
 	5: lambda results: helper_query3(results, 'case'),
 	6: lambda results: helper_query3(results, 'nibrs'),
 	7: lambda results: helper_query3(results, 'drug'),
-	9: lambda results: Counter([row['drugCode']['value'] for row in results]).most_common(),
-	10: lambda results: Counter([row['race']['value'] if 'race' in row else None for row in results]).most_common(),
-	16: lambda results: len(set([x['case']['value'] for x in results])),
-	17: lambda results: Counter([row['start_date']['value'].split('-')[0] for row in results]).most_common(),
-	28: lambda results: len([row for row in results if 'granting' in row['label']['value']])*100/len([row for row in results if 'granting' not in row['label']['value']]),
+	9: lambda results: Counter([row['drugCode'] for row in results]).most_common(),
+	10: lambda results: Counter([row['race'] if 'race' in row else None for row in results]).most_common(),
+	16: lambda results: len(set([x['case'] for x in results])),
+	17: lambda results: Counter([row['start_date'].split('-')[0] for row in results]).most_common(),
+	28: lambda results: len([row for row in results if 'granting' in row['label']])*100/len([row for row in results if 'granting' not in row['label']]),
 	29: helper_question29
 }
