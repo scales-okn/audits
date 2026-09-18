@@ -1,4 +1,5 @@
 pandas
 paramiko<4.0
+python-dateutil
 requests
 sshtunnel
