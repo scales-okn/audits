@@ -14,21 +14,25 @@ from qc_constants import fuseki_hostname, fuseki_username, fuseki_port
 
 _process_sparql = lambda response: [{k: v['value'] for k,v in row.items()} for row in response['results']['bindings']]
 
-use_live_fuseki = False # whether to pull results from the fuseki server on the graph-database vm, rather than the frozen result csvs
-skip_write = False
-outpath = 'results.json'
+# TODO fix issue wherein some column names come back in camel case rather than snake case when use_live_fuseki = True
+USE_LIVE_FUSEKI = False # whether to pull results from the fuseki server on the graph-database vm, rather than the frozen result csvs
+SKIP_WRITE = False
+OUTPATH = 'results.json'
 
 
 
 def get_question_results(question_num, is_first_of_run=True, verbose=True, serialize_dfs=False):
+    current_flag = USE_LIVE_FUSEKI
     query_num = qc_constants.question_queries[question_num]
     text = qc_constants.question_texts[question_num]
-
     if verbose and is_first_of_run:
         print(qc_constants.filters_description, '\n')
+    if query_num == 3 and not current_flag:
+        print('Switching use_live_fuseki to True due to the size of qc_queries_3.csv')
+        current_flag = True # TODO fix apparent hang on qc_queries_3.csv (unless its largest-of-its-peers 35MB are taking unexpectedly long to read)
     print(f'Retrieving results for question {question_num}...')
     if verbose:
-        if 'Clayton' in text and use_live_fuseki:
+        if 'Clayton' in text and current_flag:
             print('n.b. due to the size of the Clayton test set, this query may run slowly (i.e. ~20s)')
         print(f'Question text: "{text}"\n')
 
@@ -37,15 +41,17 @@ def get_question_results(question_num, is_first_of_run=True, verbose=True, seria
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=fuseki_hostname, username=fuseki_username)
     sftp = ssh.open_sftp()
-    query = sftp.open(f"qc_results/qc_query_{query_num}.sparql", "r").read().decode("utf-8")
-    if not use_live_fuseki:
-        csv = sftp.open(f"qc_results/qc_query_{query_num}_results.csv", "r").read().decode("utf-8")
+    with sftp.open(f"qc_results/qc_query_{query_num}.sparql", "r") as f:
+        query = f.read().decode("utf-8")
+    if not current_flag:
+        with sftp.open(f"qc_results/qc_query_{query_num}_results.csv", "r") as f:
+            csv = f.read().decode("utf-8")
         sparql_results = pd.read_csv(StringIO(csv)).to_dict('records')
     sftp.close()
     ssh.close()
 
     # submit query to fuseki server on remote
-    if use_live_fuseki:
+    if current_flag:
         port = qc_constants.fuseki_port
         with SSHTunnelForwarder((fuseki_hostname, 22), ssh_username=fuseki_username,
             remote_bind_address=("127.0.0.1", fuseki_port), local_bind_address=("127.0.0.1", fuseki_port)) as tunnel:
@@ -99,8 +105,8 @@ if __name__ == "__main__":
     else:
         results = get_question_results_multiple([int(x) for x in sys.argv[1:]], serialize_dfs=True)
 
-    if not skip_write:
-        with open(outpath, 'w') as f:
+    if not SKIP_WRITE:
+        with open(OUTPATH, 'w') as f:
             json.dump(results, f)
-        print(f'Wrote results to {outpath}')
+        print(f'Wrote results to {OUTPATH}')
     print('Script complete\n\n')
