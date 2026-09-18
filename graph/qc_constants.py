@@ -1,7 +1,9 @@
+import re
 from datetime import datetime
 from collections import Counter
 
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 
 
 
@@ -10,25 +12,27 @@ fuseki_username = "root"
 fuseki_port = 3030
 
 filters_description = '''
-**********************************************************************************
-***    These QC results were generated from a small test dataset, which was    ***
-***  filtered down from the full dataset according to the following criteria:  ***
-**********************************************************************************
+**************************************************************************************
+***      These QC results were generated from a small test dataset, which was      ***
+***    filtered down from the full dataset according to the following criteria:    ***
+**************************************************************************************
 
 - apd: arrests whose NC.ActivityDate is between Jan–Mar 2015 inclusive
-- clayton: cases for which the case id contains "23-c"
+- clayton: cases whose case id contains "23-c" and whose court category code is "COC" 
 - fulton: charges whose NC.StartDate is in Jan 2021
 - pacer: cases in Alaska (akd) or the Northern Mariana Islands (nmid)
 '''
 
 
 
+questions_validated = (0,) # updated 9/17/2026; not sure if we'll ever need to use this info in other code, but it seemed as good a place as any to keep it
+
 question_texts = {
 	0: "How many Clayton civil cases involve someone who also appeared as a Clayton criminal defendant?",
 	1: "How many Clayton civil eviction cases involve someone who also appeared as a Clayton criminal defendant?",
 	2: "For Clayton civil eviction cases that involve someone who also appeared as a Clayton criminal defendant, what is the average number of days between the end of the eviction case and the start of the criminal case?",
-	3: "For Clayton civil eviction cases that involve someone who was also sentenced in a Clayton criminal case, what is the average number of days between the end of the sentence and the start of the eviction case?",
-	4: "What is the average number of days between booking dates and first hearings in Fulton?",
+	3: "For Clayton civil cases that involve someone who was also sentenced in a Clayton criminal case, what is the average number of days between the end of the sentence and the start of the case?",
+	4: "In Fulton, what is the average number of days between a booking date associated with a case and that case's first docket entry?",
 	5: "What is the average number of days between Clayton/Fulton/PACER hearings, by case?",
 	6: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS offense category?",
 	7: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS drug code?",
@@ -81,7 +85,12 @@ question_queries = {
 
 
 
+_duration_re = re.compile(r'^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?$')
 _to_datetime = lambda x: datetime.strptime(str(x), '%Y-%m-%d')
+
+def _parse_iso_duration(duration):
+	years, months, days = (int(g) if g else 0 for g in _duration_re.match(duration).groups())
+	return relativedelta(years=years, months=months, days=days)
 
 def helper_query3(results, key):
 	if key not in ('case', 'nibrs', 'drug'):
@@ -115,6 +124,29 @@ def helper_query3(results, key):
 			tuples.append((k, sum(diffs)/len(diffs)))
 		return pd.DataFrame(tuples, columns=[key, 'avg_days_diff'])
 
+def helper_question2(results):
+	civil = [row for row in results if 'civil' in row['case_id'] and row.get('case_types') == 'Patho']
+	criminal = [row for row in results if 'civil' not in row['case_id']]
+	diffs = [(_to_datetime(crim['start_date'])-_to_datetime(civ['end_date'])).days for civ in civil for crim in criminal if crim['party'] == civ['party']]
+	return sum(diffs)/len(diffs)
+
+def helper_question3(results):
+	civil = [row for row in results if 'civil' in row['case_id']]
+	criminal = [row for row in results if 'civil' not in row['case_id']]
+	diffs = []
+	for civ in civil:
+		for crim in criminal:
+			if crim['party'] != civ['party'] or pd.isna(crim['types']) or pd.isna(crim['end_date']):
+				continue
+			durations, types = crim['durations'].split(), crim['types'].split()
+			inds_of_interest = [i for i,x in enumerate(types) if x == 'serve'] # if x == 'None' or len(types) == 1]
+			if len(inds_of_interest) > 1: # != 1:
+				raise Exception(f"ambiguous sentence data: {durations}, {types}")
+			if inds_of_interest:
+				sentence_end = _to_datetime(crim['end_date']) + _parse_iso_duration(durations[inds_of_interest[0]])
+				diffs.append((_to_datetime(civ['start_date']) - sentence_end).days)
+	return sum(diffs)/len(diffs)
+
 def helper_question29(results):
 	years = {}
 	for row in results:
@@ -129,11 +161,13 @@ def helper_question29(results):
 question_helpers = {
 	0: lambda results: len(set([row['civil_case'] for row in results])),
 	1: lambda results: len(set([row['civil_case'] for row in results if row['civil_type'] == 'Patho'])),
-	4: lambda results: sum([(_to_datetime(row['firstHearingDate'])-_to_datetime(row['bookingDate'])).days for row in results])/len(results),
+	2: helper_question2,
+	3: helper_question3,
+	4: lambda results: sum([(_to_datetime(row['first_hearing_date'])-_to_datetime(row['booking_date'])).days for row in results])/len(results),
 	5: lambda results: helper_query3(results, 'case'),
 	6: lambda results: helper_query3(results, 'nibrs'),
 	7: lambda results: helper_query3(results, 'drug'),
-	9: lambda results: Counter([row['drugCode'] for row in results]).most_common(),
+	9: lambda results: Counter([row['drug_code'] for row in results]).most_common(),
 	10: lambda results: Counter([row['race'] if 'race' in row else None for row in results]).most_common(),
 	16: lambda results: len(set([x['case'] for x in results])),
 	17: lambda results: Counter([row['start_date'].split('-')[0] for row in results]).most_common(),
