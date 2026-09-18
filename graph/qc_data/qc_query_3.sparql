@@ -1,0 +1,20 @@
+
+PREFIX scales: <http://schemas.scales-okn.org/rdf/scales#>
+PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
+PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
+PREFIX nibrs: <http://fbi.gov/cjis/nibrs/2023.0/>
+
+SELECT ?case ?nibrs ?drug ?date ?text
+WHERE { 
+    ?case a nc:CourtCase ;
+          j:RegisterAction ?entry .
+    ?entry j:RegisterActionDate ?date ;
+           j:RegisterActionDescriptionText ?text .
+    
+    OPTIONAL {
+        ?case scales:Party ?party .
+        ?party j:PersonCharge ?charge .
+        ?charge nibrs:OffenseUCRCode ?nibrs .
+        OPTIONAL { ?charge j:DrugCategoryCode ?drug . }
+    }
+}

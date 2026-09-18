@@ -1,0 +1,11 @@
+
+PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
+PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
+PREFIX scales: <http://schemas.scales-okn.org/rdf/scales#>
+
+SELECT ?case ?nos ?court
+WHERE { 
+    ?case scales:OntologyLabel <http://schemas.scales-okn.org/rdf/scales#OntologyLabel/Attribute/motion_to_seal> ;
+        j:CaseCourt ?court .
+    OPTIONAL { ?case nc:CaseSubCategoryText ?nos . }
+}
