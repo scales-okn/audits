@@ -1,3 +1,4 @@
+import re
 import sys
 import json
 
@@ -12,7 +13,8 @@ from qc_constants import fuseki_hostname, fuseki_username, fuseki_port
 
 
 
-_process_sparql = lambda response: [{k: v['value'] for k,v in row.items()} for row in response['results']['bindings']]
+_camel_to_snake = lambda str: re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", str)).lower()
+_process_sparql = lambda response: [{_camel_to_snake(k): v['value'] for k,v in row.items()} for row in response['results']['bindings']]
 
 # TODO fix issue wherein some column names come back in camel case rather than snake case when use_live_fuseki = True
 USE_LIVE_FUSEKI = False # whether to pull results from the fuseki server on the graph-database vm, rather than the frozen result csvs
