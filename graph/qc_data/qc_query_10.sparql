@@ -11,5 +11,4 @@ WHERE {
     ?entry nc:DocumentSequenceID ?row_ordinal ;
         scales:OntologyLabel ?label .
     FILTER regex(str(?nos), "44") .
-    FILTER regex(str(?label), "motion_to_dismiss") .
 }

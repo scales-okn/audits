@@ -3,19 +3,21 @@ PREFIX j: <http://release.niem.gov/niem/domains/jxdm/7.2/#>
 PREFIX nc: <http://release.niem.gov/niem/niem-core/5.0/#>
 PREFIX scales: <http://schemas.scales-okn.org/rdf/scales#>
 
-SELECT ?case ?court ?start_date ?entry_date ?entity
+SELECT ?case ?court ?start_date ?entry_date ?party_name ?entity
 WHERE {
-    ?case nc:CaseSubCategoryText "710 Fair Labor Standards Act" ;
+    ?case nc:CaseSubCategoryText "110 Insurance" ;
         j:CaseCourt ?court ;
         nc:StartDate ?start_date ;
-        j:RegisterAction ?entry .
-    ?entry j:RegisterActionDate ?entry_date ;
-        scales:OntologyLabel <http://schemas.scales-okn.org/rdf/scales#OntologyLabel/CaseEvent/settlement> .
-        
-    VALUES ?party_predicate { j:CaseInitiatingParty j:CaseDefendantParty }
+        j:RegisterAction ?entry ;
+        scales:Party ?party .
+    ?party nc:EntityName ?party_name .
+
     OPTIONAL {
-        ?case ?party_predicate ?party .
+        ?entry j:RegisterActionDate ?entry_date ;
+            scales:OntologyLabel <http://schemas.scales-okn.org/rdf/scales#OntologyLabel/CaseEvent/settlement> .
+    }
+        
+    OPTIONAL {
         ?party scales:DisambiguatedEntity ?entity .
-        FILTER regex(str(?entity), "INDUSTRY") .
     }
 }

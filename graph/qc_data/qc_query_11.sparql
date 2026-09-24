@@ -9,5 +9,4 @@ WHERE {
         j:CaseCourt ?court ;
         scales:OntologyLabel ?label .
     FILTER regex(str(?nos), "(463|530|535|540|550|555)") .
-    FILTER regex(str(?label), "(?i)attribute/(?!motion).*dismiss") .
 }
