@@ -17,43 +17,41 @@ filters_description = '''
 ***    filtered down from the full dataset according to the following criteria:    ***
 **************************************************************************************
 
-- apd: arrests whose NC.ActivityDate is between Jan–Mar 2015 inclusive
+- apd: arrests whose nc:ActivityDate is between Jan–Mar 2015 inclusive
 - clayton: cases whose case id contains "23-c" and whose court category code is "COC" 
-- fulton: charges whose NC.StartDate is in Jan 2021
+- fulton: charges with an attached booking whose nc:StartDate is in Jan 2021
 - pacer: cases in Alaska (akd) or the Northern Mariana Islands (nmid)
 '''
 
 
 
-questions_validated = (0,) # updated 9/17/2026; not sure if we'll ever need to use this info in other code, but it seemed as good a place as any to keep it
-
 question_texts = {
-	0: "How many Clayton civil cases involve someone who also appeared as a Clayton criminal defendant?",
-	1: "How many Clayton civil eviction cases involve someone who also appeared as a Clayton criminal defendant?",
-	2: "For Clayton civil eviction cases that involve someone who also appeared as a Clayton criminal defendant, what is the average number of days between the end of the eviction case and the start of the criminal case?",
-	3: "For Clayton civil cases that involve someone who was also sentenced in a Clayton criminal case, what is the average number of days between the end of the sentence and the start of the case?",
-	4: "In Fulton, what is the average number of days between a booking date associated with a case and that case's first docket entry?",
+	0: "How many Clayton civil cases involve a party who also appeared as a Clayton criminal defendant?",
+	1: "How many Clayton civil eviction cases involve a party who also appeared as a Clayton criminal defendant?",
+	2: "For Clayton civil eviction cases that involve a party who also appeared as a Clayton criminal defendant, across all civil-case/criminal-case pairs, what is the average number of days from the end of the eviction case to the start of the criminal case?",
+	3: "For Clayton civil cases that involve a party who was also sentenced to prison time in a Clayton criminal case, across all civil-case/criminal-sentence pairs, what is the average number of days from the end of the sentence to the start of the case?",
+	4: "In Fulton, what is the average number of days from a booking date associated with a case to that case's first docket entry following the booking date (if any)?",
 	5: "What is the average number of days between Clayton/Fulton/PACER hearings, by case?",
 	6: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS offense category?",
 	7: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS drug code?",
-	8: "What was the Fulton County Jail population on 1 Feb 2021?", # depends on danny_4_date in run_graph_qc
+	8: "How many people were being held in the Fulton County Jail at any time on 1 Feb 2021?", # may change in the future based on danny_4_date in run_graph_qc
 	9: "What is the total count of APD/Clayton drug charges, by NIBRS drug code?",
 	10: "What is the total count of APD drug charges, by race code?",
 	11: "What is the length in days of Clayton cases, by NIBRS offense category?",
 	12: "What is the length in days of Clayton cases, by NIBRS drug code?",
 	13: "What is the length in docket entries of Clayton cases, by NIBRS offense category?",
 	14: "What is the length in docket entries of Clayton cases, by NIBRS drug code?",
-	15: None, # TODO (not needed for the data explorer right now)
+	15: None, # not needed for the data explorer right now
 	16: "How many PACER cases have an application to proceed in forma pauperis?",
 	17: "How many PACER cases per year have an application to proceed in forma pauperis?",
 	18: "How many PACER cases have a granted application to proceed in forma pauperis?",
 	19: "What percentage of PACER applications to proceed in forma pauperis are granted, by judge?",
 	20: "What percentage of PACER applications to proceed in forma pauperis are granted, by court?",
-	21: "What percentage of PACER Fair Labor Standards Act (FLSA) cases settle?", # depends on pacer_2_nos in run_graph_qc, which i changed from nos code 830 because that code didn't produce results for the test set
-	22: "What is the average number of days that elapse in a PACER FLSA case before settlement starts?", # depends on pacer_2_nos in run_graph_qc
-	23: "What is the average number of days that elapse in a PACER FLSA case before settlement starts, by court?", # depends on pacer_2_nos in run_graph_qc
-	24: "What percentage of PACER FLSA cases contain a non-corporate party?", # depends on pacer_2_nos in run_graph_qc
-	25: "On average, do PACER FLSA cases with a non-corporate party settle more quickly or more slowly than FLSA cases with only corporate parties?", # depends on pacer_2_nos in run_graph_qc
+	21: "What percentage of PACER cases with nature of suit 110 (Insurance) settle?", # may change in the future based on pacer_2_nos in run_graph_qc
+	22: "What is the average number of days from the start of a PACER insurance case to the start of settlement?", # may change in the future based on pacer_2_nos in run_graph_qc
+	23: "What is the average number of days from the start of a PACER insurance case to the start of settlement, by court?", # may change in the future based on pacer_2_nos in run_graph_qc
+	24: "What percentage of PACER insurance cases contain a private individual, i.e. a party whose name has been redacted?", # may change in the future based on pacer_2_nos in run_graph_qc
+	25: "On average, do PACER insurance cases with a private individual settle more quickly or more slowly than insurance cases with only unredacted parties?", # may change in the future based on pacer_2_nos in run_graph_qc
 	26: "What is the average number of motions to dismiss in PACER civil rights cases?",
 	27: "What is the average number of motions to dismiss in PACER civil rights cases, by year?",
 	28: "What percentage of motions to dismiss in PACER civil rights cases are granted?",
@@ -66,7 +64,13 @@ question_texts = {
 	35: "What is the distribution of PACER motions to seal across natures of suit?",
 	36: "What is the distribution of PACER motions to seal across courts?"
 }
+ALL = list(question_texts.keys())
+APD = [k for k,v in question_texts.items() if v and 'apd' in v.lower()]
+CLAYTON = [k for k,v in question_texts.items() if v and 'clayton' in v.lower()]
+FULTON = [k for k,v in question_texts.items() if v and 'fulton' in v.lower()]
+PACER = [k for k,v in question_texts.items() if v and 'pacer' in v.lower()]
 
+# keys are question numbers, and values are n such that qc_query_n.sparql is the query that provides the data needed to answer the question
 question_queries = {
 	0: 0, 1: 0,
 	2: 1, 3: 1,
@@ -83,7 +87,41 @@ question_queries = {
 	33: 12, 34: 12, 35: 12, 36: 12
 }
 
+# natural-language descriptions of data nuances that an LLM might not be able to deduce from the question texts and the scales schema
+# each key is a piece of information, and each value is a tuple of question numbers for which the information may apply
+domain_knowledge = {
+	'Unless otherwise specified, questions and domain knowledge mentioning "APD" are referring to arrests etc tied to the Atlanta Police Department agency, distinguishable by its j:OrganizationCategoryNLETSCode value of "PD."': APD,
+	'Unless otherwise specified, questions and domain knowledge mentioning "Clayton" are referring to cases etc whose j:CourtName includes "Court of Clayton County, Georgia."': CLAYTON,
+	'Unless otherwise specified, questions and domain knowledge mentioning "Fulton" are referring to cases/bookings/etc tied to the Fulton County Jail facility, whose nc:PhysicalAddress is "901 Rice St NW, Atlanta, GA 30318."': FULTON,
+	'Unless otherwise specified, questions and domain knowledge mentioning "PACER" are referring to cases etc whose j:CourtName starts with "District Court" and ends with the name of a U.S. state or territory.': PACER,
+	'Although the SCALES graph includes no explicit datasource/provenance data and (as per RDF conventions) can make no formal guarantees about meaning encoded in URIs, APD arrest URIs are informally identifiable by the substring "ga-atlanta-pd" in situations where multi-hop join paths might create performance issues.': APD,
+	'Although the SCALES graph includes no explicit datasource/provenance data and (as per RDF conventions) can make no formal guarantees about meaning encoded in URIs, Clayton case URIs are informally identifiable by the substring "ga-clayton" in situations where multi-hop join paths might create performance issues.': CLAYTON,
+	'Although the SCALES graph includes no explicit datasource/provenance data and (as per RDF conventions) can make no formal guarantees about meaning encoded in URIs, Fulton booking URIs are informally identifiable by the substring "ga-fulton" in situations where multi-hop join paths might create performance issues.': FULTON,
+	'Although the SCALES graph includes no explicit datasource/provenance data and (as per RDF conventions) can make no formal guarantees about meaning encoded in URIs, PACER case URIs are informally identifiable with the regex "^[a-z]{2,3}d;;" in situations where multi-hop join paths might create performance issues.': PACER,
+	'The literal values that can appear as an object of j:CourtCategoryCode are as follows: "SUP" (superior courts), "MAG" (magistrate courts), "COC" (state courts); each value pertains to both the civil and criminal sides of the court at that level.': CLAYTON,
+	'All cases in the SCALES graph are either civil or criminal, and not both; the former are typed as scales:CivilCase and the latter as scales:CriminalCase.': CLAYTON+FULTON+PACER,
+	'Unless otherwise specified, fields beginning "scales:Idb" should not be used.': ALL,
+	'The only way to determine whether two parties correspond to the same underlying entity is by checking whether they are linked to the same scales:DisambiguatedEntity value.': [0, 1, 2, 3],
+	'Questions mentioning "defendants" are referring to parties typed as j:CaseDefendantParty; for those parties, j:ParticipantRoleCategoryText may rarely point to finer-grained party-role data, but that data is irrelevant when answering these questions.': [0, 1, 2],
+	'Questions mentioning "eviction cases" are referring to cases with a nc:CaseSubCategoryText value of "Patho."': [1, 2],
+	'The question phrasing "number of days from X to Y" permits both positive and negative values, whereas the phrasing "number of days between" implies the absolute value of the time delta.': [2, 3, 4, 5, 6, 7, 22, 23],
+	'Questions mentioning "sentenced to prison time" are referring to parties with a j:Sentence whose j:SentenceDescriptionText is "serve," which should be construed to start on the case\'s nc:EndDate and end after the ISO 8601 duration specified in the sentence\'s j:TermDuration.': [3],
+	'Questions mentioning "first docket entry" are referring to the entry that is chronologically earliest.': [4],
+	'For questions requesting aggregation "by X," nodes with null grouping keys (e.g. cases with a null offense-code value when grouping is "by offense code") should be dropped, with two exceptions: (1) when the grouping key is "nature of suit," cases with no nature of suit should receive the key "criminal," and (2) when the grouping key is a demographic variable (e.g. sex, race, ethnicity), rows with a null key should be grouped into a null bucket.': [5, 6, 7, 9, 10, 11, 12, 13, 14, 19, 20, 23, 27, 29],
+	'For questions requesting aggregation "by X," nodes with multiple grouping keys (e.g. cases with multiple offense-code values across multiple charges when grouping is "by offense code") should be counted in the multiple buckets corresponding to the multiple codes.': [5, 6, 7, 9, 10, 11, 12, 13, 14, 19, 20, 23, 27, 29],
+	'A missing end date or release date implies that the subject (e.g. case, booking) was still ongoing at the time the data was collected.': [8],
+	'Questions and domain knowledge mentioning "hearings" are referring to docket entries.': [5, 6, 7],
+	'For questions mentioning "days between hearings," time deltas with length 0 are permissible.': [5, 6, 7],
+	'For questions mentioning "days between hearings," entries with identical date and text should be deduplicated.': [5, 6, 7],
+	'For questions mentioning "average number of days between hearings, by [offense code | drug code]," the deltas should be computed within each case and then pooled across all cases matching a given offense code or drug code, as opposed to computing an average for each case and then averaging the averages.': [6, 7],
+	'For questions requesting multiple datasources (e.g. "Clayton/Fulton/PACER"), results should be pooled rather than split up by datasource.': [5, 6, 7, 9],
+	'Questions and domain knowledge mentioning "offense category" or "offense code" are referring to nibrs:OffenseUCRCode.': [6, 11, 13],
+	'Questions mentioning "drug charges" are referring to charges with a j:DrugCategoryCode attached in some way.': [9, 10],
+	'Questions mentioning "redacted" parties are referring to parties whose nc:EntityName contains the substring "SCALES-Party-Hash."': [24, 25],
+}
 
+# updated 9/17/2026; not sure if we'll ever need to use this info in other code, but it seemed as good a place as any to keep it
+questions_validated = (0,)
 
 _duration_re = re.compile(r'^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?$')
 _to_datetime = lambda x: datetime.strptime(str(x), '%Y-%m-%d')
@@ -91,6 +129,8 @@ _to_datetime = lambda x: datetime.strptime(str(x), '%Y-%m-%d')
 def _parse_iso_duration(duration):
 	years, months, days = (int(g) if g else 0 for g in _duration_re.match(duration).groups())
 	return relativedelta(years=years, months=months, days=days)
+
+
 
 def helper_query3(results, key):
 	if key not in ('case', 'nibrs', 'drug'):
@@ -102,13 +142,13 @@ def helper_query3(results, key):
 			continue
 		cid = cid.split('/')[-1]
 		dates_all.setdefault(cid, set()).add(f"{row['date']} | {row['text']}")
-		if nibrs:
+		if not pd.isna(nibrs):
 			nibrs_to_cid.setdefault(nibrs, set()).add(cid)
-		if drug:
+		if not pd.isna(drug):
 			drug_to_cid.setdefault(drug, set()).add(cid)
 	diffs_all = {}
 	for cid, dates in dates_all.items():
-		dates = sorted([_to_datetime(x.split(' | ')[0]) for x in dates])
+		dates = sorted([_to_datetime(date.split(' | ')[0]) for date in dates])
 		if len(dates)>1:
 			for i in range(len(dates)-1):
 				diffs_all.setdefault(cid, []).append((dates[i+1]-dates[i]).days)
@@ -123,6 +163,46 @@ def helper_query3(results, key):
 				diffs += diffs_all.get(cid) or []
 			tuples.append((k, sum(diffs)/len(diffs)))
 		return pd.DataFrame(tuples, columns=[key, 'avg_days_diff'])
+
+def helper_query6(results, length_type, group_key):
+	case_lengths, key_to_cids = {}, {}
+	for row in results:
+		cid = row['case']
+		if cid not in case_lengths:
+			case_lengths[cid] = (_to_datetime(row['end_date'])-_to_datetime(row['start_date'])).days \
+				if length_type == 'days' else row['entry_count']
+		key_to_cids.setdefault(row[group_key], set()).add(cid)
+	tuples = [(key, sum(case_lengths[cid] for cid in cids)/len(cids)) for key, cids in key_to_cids.items()]
+	return pd.DataFrame(tuples, columns=[group_key, f'avg_length_{length_type}'])
+
+def helper_query8(results, group_key):
+	df = pd.DataFrame(results).dropna(subset=[group_key])
+	non_application = df[~df['ifp_label'].str.contains('IFP_APPLICATION')]
+	granted = non_application['ifp_label'].str.contains('IFP_GRANT')
+	return {k: float(v) for k, v in (granted.groupby(non_application[group_key]).mean()*100).items()}
+
+def helper_query9(results):
+	df = pd.DataFrame(results)
+	meta = df.drop_duplicates('case').set_index('case')[['court', 'start_date']]
+	settlement_date = df.dropna(subset=['entry_date']).groupby('case')['entry_date'].min()
+	redacted = df.groupby('case')['party_name'].apply(lambda names: names.str.startswith('SCALES-Party-Hash-').any())
+	case_df = meta.assign(settlement_date=settlement_date, has_redacted_party=redacted)
+	case_df['days_to_settlement'] = (pd.to_datetime(case_df['settlement_date']) - pd.to_datetime(case_df['start_date'])).dt.days
+	return case_df
+
+def helper_query10(results):
+	df = pd.DataFrame(results)
+	case_years = df.drop_duplicates('case').set_index('case')['year'].str[:4]
+	dismissals = df[df['label'].str.contains('motion_to_dismiss')].assign(year=lambda d: d['case'].map(case_years))
+	return case_years, dismissals
+
+def helper_query12(results):
+	df = pd.DataFrame(results)
+	sealed = df.groupby('case')['label'].apply(lambda labels: labels.str.contains('motion_to_seal').any())
+	meta = df.drop_duplicates('case').set_index('case')[['nos', 'court']]
+	return meta.join(sealed.rename('sealed'))
+
+
 
 def helper_question2(results):
 	civil = [row for row in results if 'civil' in row['case_id'] and row.get('case_types') == 'Patho']
@@ -147,16 +227,26 @@ def helper_question3(results):
 				diffs.append((_to_datetime(civ['start_date']) - sentence_end).days)
 	return sum(diffs)/len(diffs)
 
+def helper_question25(results):
+	case_df = helper_query9(results)
+	redacted_avg = case_df[case_df['has_redacted_party']]['days_to_settlement'].mean()
+	unredacted_avg = case_df[~case_df['has_redacted_party']]['days_to_settlement'].mean()
+	# conclusion = 'more quickly' if redacted_avg < unredacted_avg else 'more slowly' if redacted_avg > unredacted_avg else 'about the same'
+	return {'private_individual_avg_days_to_settlement': float(redacted_avg), 'unredacted_only_avg_days_to_settlement': float(unredacted_avg)} # 'conclusion': conclusion
+
+def helper_question27(results):
+	case_years, dismissals = helper_query10(results)
+	totals = case_years.groupby(case_years).size()
+	counts = dismissals.groupby('year').size().reindex(totals.index, fill_value=0)
+	return {year: float(avg) for year, avg in (counts/totals).items()}
+
 def helper_question29(results):
-	years = {}
-	for row in results:
-		year = row['date'].split('-')[0]
-		if year not in years:
-			years[year] = {'granted': 0, 'all': 0}
-		years[year]['granted' if 'granting' in row['label'] else 'all'] += 1
-	for year in years:
-		years[year] = years[year]['granted']*100/years[year]['all']
-	return years
+	_, dismissals = helper_query10(results)
+	granted = dismissals['label'].str.contains('granting')
+	pct_by_year = granted.groupby(dismissals['year']).mean()*100
+	return {year: float(pct) for year, pct in pct_by_year.items()}
+
+
 
 question_helpers = {
 	0: lambda results: len(set([row['civil_case'] for row in results])),
@@ -167,10 +257,33 @@ question_helpers = {
 	5: lambda results: helper_query3(results, 'case'),
 	6: lambda results: helper_query3(results, 'nibrs'),
 	7: lambda results: helper_query3(results, 'drug'),
+	8: lambda results: len(results),
 	9: lambda results: Counter([row['drug_code'] for row in results]).most_common(),
 	10: lambda results: Counter([row['race'] if 'race' in row else None for row in results]).most_common(),
-	16: lambda results: len(set([x['case'] for x in results])),
-	17: lambda results: Counter([row['start_date'].split('-')[0] for row in results]).most_common(),
-	28: lambda results: len([row for row in results if 'granting' in row['label']])*100/len([row for row in results if 'granting' not in row['label']]),
-	29: helper_question29
+	11: lambda results: helper_query6(results, 'days', 'nibrs'),
+	12: lambda results: helper_query6(results, 'days', 'drug'),
+	13: lambda results: helper_query6(results, 'entries', 'nibrs'),
+	14: lambda results: helper_query6(results, 'entries', 'drug'),
+	15: None, # not needed for the data explorer right now
+	16: lambda results: len(set([row['case'] for row in results if row['ifp_label'] != 'IFP_APPLICATION'])),
+	17: lambda results: Counter([x[1] for x in set([(row['case'], row['year'].split('-')[0]) for row in results if row['ifp_label'] != 'IFP_APPLICATION'])]).most_common(),
+	18: lambda results: len(set([row['case'] for row in results if row['ifp_label'] == 'IFP_GRANT'])),
+	19: lambda results: helper_query8(results, 'ifp_judge'),
+	20: lambda results: helper_query8(results, 'court'),
+	21: lambda results: float(helper_query9(results)['settlement_date'].notna().mean()*100),
+	22: lambda results: float(helper_query9(results)['days_to_settlement'].mean()),
+	23: lambda results: {court: float(avg) for court, avg in helper_query9(results).groupby('court')['days_to_settlement'].mean().items()},
+	24: lambda results: float(helper_query9(results)['has_redacted_party'].mean()*100),
+	25: helper_question25,
+	26: lambda results: len(helper_query10(results)[1]) / len(helper_query10(results)[0]),
+	27: helper_question27,
+	28: lambda results: float(helper_query10(results)[1]['label'].str.contains('granting').mean()*100),
+	29: helper_question29,
+	30: lambda results: len(set(row['case'] for row in results if re.search(r'(?i)attribute/(?!motion).*dismiss', row['label'])))*100/len(set(row['case'] for row in results)),
+	31: lambda results: Counter({row['case']: row['court'] for row in results}.values()).most_common(1)[0][0],
+	32: lambda results: Counter({row['case']: row['court'] for row in results}.values()).most_common()[-1][0],
+	33: lambda results: float(helper_query12(results)['sealed'].mean()*100),
+	34: lambda results: helper_query12(results).groupby('nos')['sealed'].mean().pipe(lambda pct: list(pct[pct == pct.max()].index)),
+	35: lambda results: Counter(helper_query12(results).query('sealed')['nos'].fillna('criminal')).most_common(),
+	36: lambda results: Counter(helper_query12(results).query('sealed')['court']).most_common()
 }
