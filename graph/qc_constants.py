@@ -30,35 +30,35 @@ question_texts = {
 	1: "How many Clayton civil eviction cases involve a party who also appeared as a Clayton criminal defendant?",
 	2: "For Clayton civil eviction cases that involve a party who also appeared as a Clayton criminal defendant, across all civil-case/criminal-case pairs, what is the average number of days from the end of the eviction case to the start of the criminal case?",
 	3: "For Clayton civil cases that involve a party who was also sentenced to prison time in a Clayton criminal case, across all civil-case/criminal-sentence pairs, what is the average number of days from the end of the sentence to the start of the case?",
-	4: "In Fulton, what is the average number of days from a booking date associated with a case to that case's first docket entry following the booking date (if any)?",
+	4: "In Fulton, what is the average number of days from a booking date associated with a case to that case's first docket entry involving the booked party, excluding negative date differences?",
 	5: "What is the average number of days between Clayton/Fulton/PACER hearings, by case?",
 	6: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS offense category?",
 	7: "What is the average number of days between Clayton/Fulton/PACER hearings, by NIBRS drug code?",
 	8: "How many people were being held in the Fulton County Jail at any time on 1 Feb 2021?", # may change in the future based on danny_4_date in run_graph_qc
 	9: "What is the total count of APD/Clayton drug charges, by NIBRS drug code?",
 	10: "What is the total count of APD drug charges, by race code?",
-	11: "What is the length in days of Clayton cases, by NIBRS offense category?",
-	12: "What is the length in days of Clayton cases, by NIBRS drug code?",
-	13: "What is the length in docket entries of Clayton cases, by NIBRS offense category?",
-	14: "What is the length in docket entries of Clayton cases, by NIBRS drug code?",
+	11: "What is the average length in days of closed Clayton cases, by NIBRS offense category?",
+	12: "What is the average length in days of closed Clayton cases, by NIBRS drug code?",
+	13: "What is the average length in docket entries of Clayton cases, by NIBRS offense category?",
+	14: "What is the average length in docket entries of Clayton cases, by NIBRS drug code?",
 	15: None, # not needed for the data explorer right now
 	16: "How many PACER cases have an application to proceed in forma pauperis?",
-	17: "How many PACER cases per year have an application to proceed in forma pauperis?",
+	17: "How many PACER cases have an application to proceed in forma pauperis, by starting year of the case?",
 	18: "How many PACER cases have a granted application to proceed in forma pauperis?",
-	19: "What percentage of PACER applications to proceed in forma pauperis are granted, by judge?",
+	19: "What percentage of PACER applications to proceed in forma pauperis are granted, by granting judge?",
 	20: "What percentage of PACER applications to proceed in forma pauperis are granted, by court?",
 	21: "What percentage of PACER cases with nature of suit 110 (Insurance) settle?", # may change in the future based on pacer_2_nos in run_graph_qc
-	22: "What is the average number of days from the start of a PACER insurance case to the start of settlement?", # may change in the future based on pacer_2_nos in run_graph_qc
-	23: "What is the average number of days from the start of a PACER insurance case to the start of settlement, by court?", # may change in the future based on pacer_2_nos in run_graph_qc
-	24: "What percentage of PACER insurance cases contain a private individual, i.e. a party whose name has been redacted?", # may change in the future based on pacer_2_nos in run_graph_qc
-	25: "On average, do PACER insurance cases with a private individual settle more quickly or more slowly than insurance cases with only unredacted parties?", # may change in the future based on pacer_2_nos in run_graph_qc
-	26: "What is the average number of motions to dismiss in PACER civil rights cases?",
-	27: "What is the average number of motions to dismiss in PACER civil rights cases, by year?",
-	28: "What percentage of motions to dismiss in PACER civil rights cases are granted?",
-	29: "What percentage of motions to dismiss in PACER civil rights cases are granted, by year?",
-	30: "What percentage of PACER habeas-corpus cases are dismissed?",
-	31: "Which court sees the most PACER habeas-corpus cases?",
-	32: "Which court sees the least PACER habeas-corpus cases?",
+	22: "What is the average number of days from the start of a PACER NOS-110 case to the start of settlement?", # may change in the future based on pacer_2_nos in run_graph_qc
+	23: "What is the average number of days from the start of a PACER NOS-110 case to the start of settlement, by court?", # may change in the future based on pacer_2_nos in run_graph_qc
+	24: "What percentage of PACER NOS-110 cases contain a private individual, i.e. a party whose name has been redacted?", # may change in the future based on pacer_2_nos in run_graph_qc
+	25: "On average, in settling PACER NOS-110 cases with a private individual, does settlement begin sooner or later than in settling NOS-110 cases with only unredacted parties?", # may change in the future based on pacer_2_nos in run_graph_qc
+	26: "What is the average number of motions to dismiss in PACER cases with nature of suit beginning with 44 (civil rights cases)?",
+	27: "What is the average number of motions to dismiss in PACER NOS-44X cases, by starting year of the case?",
+	28: "What percentage of motions to dismiss in PACER NOS-44X cases are granted?",
+	29: "What percentage of motions to dismiss in PACER NOS-44X cases are granted, by starting year of the case?",
+	30: "What percentage of PACER cases with nature of suit 463/530/535/540/550/555 (habeas corpus cases) are dismissed?",
+	31: "Which court sees the most PACER NOS-463/530/535/540/550/555 cases?",
+	32: "Which court sees the least PACER NOS-463/530/535/540/550/555 cases?",
 	33: "What percentage of PACER cases have a motion to seal?",
 	34: "Which nature of suit has the highest percentage of PACER cases with a motion to seal?",
 	35: "What is the distribution of PACER motions to seal across natures of suit?",
@@ -100,7 +100,7 @@ domain_knowledge = {
 	'Although the SCALES graph includes no explicit datasource/provenance data and (as per RDF conventions) can make no formal guarantees about meaning encoded in URIs, PACER case URIs are informally identifiable with the regex "^[a-z]{2,3}d;;" in situations where multi-hop join paths might create performance issues.': PACER,
 	'The literal values that can appear as an object of j:CourtCategoryCode are as follows: "SUP" (superior courts), "MAG" (magistrate courts), "COC" (state courts); each value pertains to both the civil and criminal sides of the court at that level.': CLAYTON,
 	'All cases in the SCALES graph are either civil or criminal, and not both; the former are typed as scales:CivilCase and the latter as scales:CriminalCase.': CLAYTON+FULTON+PACER,
-	'Unless otherwise specified, fields beginning "scales:Idb" should not be used.': ALL,
+	'Unless otherwise specified, fields beginning "scales:Idb" are unreliable and should not be used.': ALL,
 	'The only way to determine whether two parties correspond to the same underlying entity is by checking whether they are linked to the same scales:DisambiguatedEntity value.': [0, 1, 2, 3],
 	'Questions mentioning "defendants" are referring to parties typed as j:CaseDefendantParty; for those parties, j:ParticipantRoleCategoryText may rarely point to finer-grained party-role data, but that data is irrelevant when answering these questions.': [0, 1, 2],
 	'Questions mentioning "eviction cases" are referring to cases with a nc:CaseSubCategoryText value of "Patho."': [1, 2],
@@ -109,7 +109,7 @@ domain_knowledge = {
 	'Questions mentioning "first docket entry" are referring to the entry that is chronologically earliest.': [4],
 	'For questions requesting aggregation "by X," nodes with null grouping keys (e.g. cases with a null offense-code value when grouping is "by offense code") should be dropped, with two exceptions: (1) when the grouping key is "nature of suit," cases with no nature of suit should receive the key "criminal," and (2) when the grouping key is a demographic variable (e.g. sex, race, ethnicity), rows with a null key should be grouped into a null bucket.': [5, 6, 7, 9, 10, 11, 12, 13, 14, 19, 20, 23, 27, 29],
 	'For questions requesting aggregation "by X," nodes with multiple grouping keys (e.g. cases with multiple offense-code values across multiple charges when grouping is "by offense code") should be counted in the multiple buckets corresponding to the multiple codes.': [5, 6, 7, 9, 10, 11, 12, 13, 14, 19, 20, 23, 27, 29],
-	'A missing end date or release date implies that the subject (e.g. case, booking) was still ongoing at the time the data was collected.': [8],
+	'A missing end date or release date implies that the node with the missing date (e.g. case, booking) was still ongoing at the time the underlying data was collected.': [8],
 	'Questions and domain knowledge mentioning "hearings" are referring to docket entries.': [5, 6, 7],
 	'For questions mentioning "days between hearings," time deltas with length 0 are permissible.': [5, 6, 7],
 	'For questions mentioning "days between hearings," entries with identical date and text should be deduplicated.': [5, 6, 7],
@@ -117,11 +117,20 @@ domain_knowledge = {
 	'For questions requesting multiple datasources (e.g. "Clayton/Fulton/PACER"), results should be pooled rather than split up by datasource.': [5, 6, 7, 9],
 	'Questions and domain knowledge mentioning "offense category" or "offense code" are referring to nibrs:OffenseUCRCode.': [6, 11, 13],
 	'Questions mentioning "drug charges" are referring to charges with a j:DrugCategoryCode attached in some way.': [9, 10],
+	'For questions mentioning case length, cases with no nc:EndDate should be dropped.': [11, 12, 13, 14],
+	'For questions mentioning "in forma pauperis," scales:IfpLabel should be used rather than scales:OntologyLabel.': [16, 17, 18, 19, 20],
+	'For questions mentioning "in forma pauperis," the scales:IfpLabel value "IFP_APPLICATION" is unreliable and should be dropped; in lieu of that label, IFP applications can be inferred from the presence of other labels (i.e. IFP_GRANT, IFP_DENY, and IFP_OTHER), with each such label implying the existence of an underlying application.': [16, 17, 18, 19, 20],
+	'Questions mentioning "court" should use j:CaseCourt only, rather than attempting to deduce additional information about secondary courts from which or to which a case was transferred.': [20, 23, 31, 32, 36],
+	'Although the SCALES graph (as per RDF conventions) can make no formal guarantees about meaning encoded in URIs, for questions referring to a "scales:OntologyLabel value" or a specific kind of case event (e.g. motion to dismiss, motion to seal), pending the addition of literal strings corresponding to scales:OntologyLabel URIs, the natural-language name of the case event denoted by such a URI can be determined by taking the substring following the final forward slash in the URI.': [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 33, 34, 35, 36],
+	'Questions mentioning "settlement" are referring to docket entries with a scales:OntologyLabel value of "settlement"; settlement should be construed to begin on the date of the first docket entry with such a label, and settlement begins at most once per case.': [21, 22, 23, 24, 25],
+	'Questions mentioning "nature of suit" or "NOS" are referring to nc:CaseSubCategoryText, which for PACER cases stores nature of suit as a string containing a numerical code and a standardized description.': [21, 22, 23, 24, 25, 34],
 	'Questions mentioning "redacted" parties are referring to parties whose nc:EntityName contains the substring "SCALES-Party-Hash."': [24, 25],
+	'Questions asking for a percentage of motions to dismiss that are granted should be construed as asking for a numerator counting docket entries with a scales:OntologyLabel value of "granting_motion_to_dismiss" and a denominator counting entries with a value of "motion_to_dismiss".': [28, 29],
+	'Questions mentioning case dismissal are referring to cases with a docket entry whose scales:OntologyLabel value matches the regex "(?!motion).*dismiss".': [30]
 }
 
-# updated 9/17/2026; not sure if we'll ever need to use this info in other code, but it seemed as good a place as any to keep it
-questions_validated = (0,)
+# updated 9/28/2026; not sure if we'll ever need to use this info in other code, but it seemed as good a place as any to keep it
+questions_validated = (0, 4)
 
 _duration_re = re.compile(r'^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?$')
 _to_datetime = lambda x: datetime.strptime(str(x), '%Y-%m-%d')
