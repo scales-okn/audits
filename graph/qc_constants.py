@@ -19,7 +19,7 @@ filters_description = '''
 
 - apd: arrests whose nc:ActivityDate is between Jan–Mar 2015 inclusive
 - clayton: cases whose case id contains "23-c" and whose court category code is "COC" 
-- fulton: charges with an attached booking whose nc:StartDate is in Jan 2021
+- fulton: charges whose case has an attached booking whose nc:StartDate is in Jan 2021
 - pacer: cases in Alaska (akd) or the Northern Mariana Islands (nmid)
 '''
 
@@ -130,7 +130,7 @@ domain_knowledge = {
 }
 
 # updated 9/28/2026; not sure if we'll ever need to use this info in other code, but it seemed as good a place as any to keep it
-questions_validated = (0, 4)
+questions_validated = (0, 4, 5, 6, 7)
 
 _duration_re = re.compile(r'^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?$')
 _to_datetime = lambda x: datetime.strptime(str(x), '%Y-%m-%d')
